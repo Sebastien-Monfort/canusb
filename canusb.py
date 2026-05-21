@@ -15,7 +15,7 @@ def autodetect_ch340():
 def hex_to_uint8_list(s: str):
     s = s.replace("0x", "").replace("0X", "").replace(" ", "")
     if len(s) % 2 != 0:
-        s = "0" + s
+        s = s + "0"
     return [int(s[i:i+2], 16) for i in range(0, len(s), 2)]
 
 
@@ -37,19 +37,31 @@ def parse_id_data(args) -> tuple[int, list[int]]:
     return parse_id(args), parse_data(args)
 
 def parse_args(arglist = None):
-    parser = argparse.ArgumentParser(description="Simple driver to send CAN frames with Waveshare USB-CAN-A device")
+    parser = argparse.ArgumentParser(description="Simple driver to send CAN frames with Waveshare\
+                                      USB-CAN-A device")
     parser.add_argument('--port', '-p',
-                        help="dongle serial port (COMX, /dev/ttyUSBX). If not set search for the correct device",
+                        help="dongle serial port (COMX, /dev/ttyUSBX). If not set search for the\
+                              correct device",
                         default=None)
     parser.add_argument('--id', '-i',
                         help="extended frame id to use, hex string")
     parser.add_argument('--data', '-d',
-                        help="data to be send, hex string (lsb first): 0xABBCC or 0x0Ax0BBx0CC sends [data0:0x0A|data1:0xBB|data2:0xCC]")
+                        help="data to be send, hex string (lsb first, padding added):\
+                            0xAABBC or 0xAAx0BBx0C0 sends [data0:0xAA|data1:0xBB|data2:0xC0]")
     parser.add_argument('--can_baud', '-b',
-                        help="CAN bus baudrate: 5000, 10000, 20000, 50000, 100000, 125000, 200000, 250000, 400000, 500000, 800000, 1000000",
+                        help="CAN bus baudrate: 5000, 10000, 20000, 50000, 100000, 125000,\
+                              200000, 250000, 400000, 500000, 800000, 1000000",
                         default=500000)
     parser.add_argument('--listen', '-l',
-                        help = "Set the device to listen mode, received frames are printed [ID]:[data]")
+                        help = "Set the device to listen mode, received frames are\
+                            printed [ID]:[data]")
+    parser.add_argument('--repeat', '-r',
+                        type= int,
+                        help="sends the message multiple time")
+    parser.add_argument('--delay', '-ms',
+                        default=200,
+                        type=int,
+                        help="time delay between two messages in ms")
 
     return parser.parse_args(arglist)
 
@@ -70,12 +82,22 @@ def main():
         send_mode = True
         id, data = parse_id_data(args)
 
+    # repeat and delay
+    if args.repeat is None:
+        cnt = 1
+        delay = 0
+    else:
+        cnt = args.repeat + 1
+        delay = args.delay
+
     # Init dongle
     dongle = WaveShareUsbCanA(port, args.can_baud)
     time.sleep(0.1)
 
     if send_mode:
-        dongle.send_can_frame(id, data)
-
+        for _ in range(0, cnt):
+            dongle.send_can_frame(id, data)
+            time.sleep(delay / 1000)
+    
 if __name__ == "__main__":
     main()
