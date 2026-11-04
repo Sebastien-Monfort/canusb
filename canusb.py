@@ -23,7 +23,6 @@ def parse_data(data) -> list[int]:
     
     return hex_to_uint8_list(data)
 
-
 def read_exact(stream, size):
     """Read exactly 'size' bytes from a binary stream."""
     data = bytearray()
@@ -37,7 +36,6 @@ def read_exact(stream, size):
         data.extend(chunk)
 
     return bytes(data)
-
 
 def stdin_send_loop(dongle:WaveShareUsbCanA, msg_id:int):
     stream = sys.stdin.buffer
@@ -53,10 +51,7 @@ def stdin_send_loop(dongle:WaveShareUsbCanA, msg_id:int):
 
         # Validate CAN payload size (Classical CAN)
         if length > 8:
-            print(
-                f"Invalid CAN frame length: {length}",
-                file=sys.stderr
-            )
+            print(f"Invalid CAN frame length: {length}", file=sys.stderr)
             break
 
         # Read payload
