@@ -67,6 +67,7 @@ def parse_args(arglist = None):
 
 def main():
     args = parse_args()
+    send_mode = True
 
     # Serial port:
     if args.port is None:
@@ -81,6 +82,8 @@ def main():
         # send mode
         send_mode = True
         id, data = parse_id_data(args)
+    else:
+        send_mode = False
 
     # repeat and delay
     if args.repeat is None:
@@ -98,6 +101,10 @@ def main():
         for _ in range(0, cnt):
             dongle.send_can_frame(id, data)
             time.sleep(delay / 1000)
+
+    if not send_mode:
+        # Receive mode
+        pass
     
 if __name__ == "__main__":
     main()
