@@ -1,3 +1,4 @@
+#! env/bin/python
 import argparse
 import serial.tools.list_ports
 from WaveShareUsbCanA import WaveShareUsbCanA
