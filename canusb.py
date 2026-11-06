@@ -1,4 +1,6 @@
-#! env/bin/python
+#!/bin/sh
+''''exec "$(dirname "$(readlink -f "$0")")/env/bin/python" "$0" "$@" # '''
+
 import argparse
 import sys
 from WaveShareCAN import Dongle, CANMessage
