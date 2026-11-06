@@ -67,14 +67,21 @@ def stdin_send_loop(dongle:Dongle, msg_id:int):
             print(f"Error sending CAN frame: {e}", file=sys.stderr)
             break
 
-def read_loop(dongle:Dongle):
+def read_loop(dongle:Dongle, raw:bool):
 
     try:
         while True:
             msg = dongle.read()
 
             if msg is not None:
-                print(msg)
+                if raw:
+                    out_data = bytearray()
+                    out_data.append(len(msg.data))
+                    out_data.extend(msg.data)
+                    sys.stdout.buffer.write(out_data)
+                    sys.stdout.buffer.flush()
+                else:
+                    print(msg)
 
     except KeyboardInterrupt:
         pass
@@ -85,28 +92,46 @@ def main():
 
     parser.add_argument('--port', '-p', required=True, help="tty port of the dongle")
 
-    parser.add_argument('--can_baud', '-b',
+    parser.add_argument(
+        '--can_baud', '-b',
         help="CAN bus baudrate: 5000, 10000, 20000, 50000, 100000, 125000,\
                 200000, 250000, 400000, 500000, 800000, 1000000",
         default=500000,
-        type=int)
-    parser.add_argument('--id', '-i',
+        type=int
+    )
+
+    parser.add_argument(
+        '--id', '-i',
         default="0xA6",
-        help="extended frame id to use, hex string")
-    parser.add_argument('--data', '-d',
+        help="extended frame id to use, hex string"
+    )
+
+    parser.add_argument(
+        '--data', '-d',
         help="data to be send, hex string (lsb first, padding added):\
             0xAABBC or 0xAAx0BBx0C0 sends [data0:0xAA|data1:0xBB|data2:0xC0].\
             If no message is given, data from stdin is used with the following format:\
-            [1 byte: size][0 to 8 bytes: data]")
-    parser.add_argument('--listen', '-l', action="store_true",
-        help="listen to incoming can messages")
+            [1 byte: size][0 to 8 bytes: data]"
+    )
+
+    parser.add_argument(
+        '--listen', '-l', action="store_true",
+        help="listen to incoming can messages"
+    )
+
+    parser.add_argument(
+        '--raw', '-r',
+        action="store_true",
+        help="when set the received messages data is sent to stdout:\
+            [1 byte: size][0 to 8 bytes: data]"
+    )
 
     args = parser.parse_args()
 
     dongle = Dongle(args.port, args.can_baud)
 
     if args.listen:
-        read_loop(dongle)
+        read_loop(dongle, args.raw)
 
     elif args.data is not None:
         # Send a single frame from CLI arguments

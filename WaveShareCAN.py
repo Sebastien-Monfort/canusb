@@ -97,7 +97,7 @@ class Dongle:
 
         # Initialize the dongle
         config_frame_data = self.config_frame()
-        print(config_frame_data)
+        # print(config_frame_data)
         self.ser.write(config_frame_data)
         self.ser.flush()
         time.sleep(0.1)
@@ -192,6 +192,6 @@ class Dongle:
                 continue
 
             can_id = int.from_bytes(buf[2:2 + id_len], "little")
-            data = bytes(buf[2 + id_len:2 + id_len + dlc])
+            data = bytearray(buf[2 + id_len:2 + id_len + dlc])
             del buf[:total]
             return CANMessage(can_id, data, extended, remote)
