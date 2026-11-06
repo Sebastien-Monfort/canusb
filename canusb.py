@@ -1,8 +1,7 @@
 #! env/bin/python
 import argparse
-import os
 import sys
-from WaveShareUsbCanA import WaveShareUsbCanA
+from WaveShareCAN import Dongle, CANMessage
 
 def hex_to_uint8_list(s: str):
     s = s.replace("0x", "").replace("0X", "").replace(" ", "")
@@ -37,7 +36,7 @@ def read_exact(stream, size):
 
     return bytes(data)
 
-def stdin_send_loop(dongle:WaveShareUsbCanA, msg_id:int):
+def stdin_send_loop(dongle:Dongle, msg_id:int):
     stream = sys.stdin.buffer
 
     while True:
@@ -62,11 +61,23 @@ def stdin_send_loop(dongle:WaveShareUsbCanA, msg_id:int):
             break
 
         try:
-            dongle.send_can_frame(msg_id, list(data))
+            dongle.send(msg_id, list(data))
 
         except Exception as e:
             print(f"Error sending CAN frame: {e}", file=sys.stderr)
             break
+
+def read_loop(dongle:Dongle):
+
+    try:
+        while True:
+            msg = dongle.read()
+
+            if msg is not None:
+                print(msg)
+
+    except KeyboardInterrupt:
+        pass
 
 def main():
     parser = argparse.ArgumentParser(description="Simple driver to send and receive CAN frames\
@@ -77,7 +88,8 @@ def main():
     parser.add_argument('--can_baud', '-b',
         help="CAN bus baudrate: 5000, 10000, 20000, 50000, 100000, 125000,\
                 200000, 250000, 400000, 500000, 800000, 1000000",
-        default=500000)
+        default=500000,
+        type=int)
     parser.add_argument('--id', '-i',
         default="0xA6",
         help="extended frame id to use, hex string")
@@ -91,18 +103,17 @@ def main():
 
     args = parser.parse_args()
 
-    dongle = WaveShareUsbCanA(args.port, args.can_baud)
+    dongle = Dongle(args.port, args.can_baud)
 
     if args.listen:
-        # Listen to incoming CAN messages
-        pass
+        read_loop(dongle)
 
     elif args.data is not None:
         # Send a single frame from CLI arguments
         msg_id = parse_id(args.id)
         data = parse_data(args.data)
 
-        dongle.send_can_frame(msg_id, data)
+        dongle.send(msg_id, data)
 
     else:
         # Send frames received from stdin
